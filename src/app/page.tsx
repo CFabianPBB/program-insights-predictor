@@ -164,11 +164,34 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
             row.eachCell((cell, colNumber) => {
               const header = headers[colNumber - 1];
               if (header) {
-                rowData[header as keyof ExcelRow] = cell.value;
+                const cellValue = cell.value;
+                
+                // Convert the cell value based on the header type
+                switch(header) {
+                  case 'Total Cost':
+                  case 'FTE':
+                  case 'Personnel':
+                  case 'NonPersonnel':
+                    rowData[header] = typeof cellValue === 'number' ? cellValue : 0;
+                    break;
+                  default:
+                    rowData[header] = cellValue?.toString() || '';
+                }
               }
             });
             
-            jsonData.push(rowData as ExcelRow);
+            // Ensure all required fields are present with proper types
+            const processedRow: ExcelRow = {
+              'User Group': rowData['User Group']?.toString() || '',
+              'Program': rowData['Program']?.toString() || '',
+              'Description': rowData['Description']?.toString() || '',
+              'Total Cost': typeof rowData['Total Cost'] === 'number' ? rowData['Total Cost'] : 0,
+              'FTE': typeof rowData['FTE'] === 'number' ? rowData['FTE'] : 0,
+              'Personnel': typeof rowData['Personnel'] === 'number' ? rowData['Personnel'] : 0,
+              'NonPersonnel': typeof rowData['NonPersonnel'] === 'number' ? rowData['NonPersonnel'] : 0
+            };
+            
+            jsonData.push(processedRow);
           });
           
           resolve(jsonData);
