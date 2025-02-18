@@ -172,8 +172,9 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
           });
           
           resolve(jsonData);
-        } catch (err: unknown) {
-          reject(new Error('Error processing Excel file'));
+        } catch (error: unknown) {
+          console.error('Excel processing error:', error);
+          reject(new Error(error instanceof Error ? error.message : 'Error processing Excel file'));
         }
       };
       reader.onerror = () => reject(new Error('Error reading file'));
@@ -316,9 +317,10 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
     return 'Not specified';
   };
 
-  const exportToExcel = async () => {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Program Analysis');
+  const exportToExcel = async (): Promise<void> => {
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Program Analysis');
     
     const headers = [
       'Program Name',
@@ -402,6 +404,10 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
     });
     saveAs(blob, `${organizationName.replace(/\s+/g, '-')}-Program-Analysis.xlsx`);
+    } catch (error: unknown) {
+      console.error('Error exporting to Excel:', error instanceof Error ? error.message : 'Unknown error');
+      throw error;
+    }
   };
   
   const formatCurrency = (amount: number): string => {
