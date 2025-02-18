@@ -157,10 +157,12 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
             headers.push(value);
           });
           
+type ExcelCellValue = string | number | null | undefined;
+
           worksheet.eachRow((row, rowNumber) => {
             if (rowNumber === 1) return;
             
-            const rowData: Record<keyof ExcelRow, any> = {
+            const rowData: Record<keyof ExcelRow, string | number> = {
               'User Group': '',
               'Program': '',
               'Description': '',
@@ -173,7 +175,7 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
             row.eachCell((cell, colNumber) => {
               const header = headers[colNumber - 1] as keyof ExcelRow;
               if (header && header in rowData) {
-                const cellValue = cell.value;
+                const cellValue: ExcelCellValue = cell.value;
                 
                 // Convert the cell value based on the header type
                 if (['Total Cost', 'FTE', 'Personnel', 'NonPersonnel'].includes(header)) {
