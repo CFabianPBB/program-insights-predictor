@@ -157,9 +157,6 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
             headers.push(value);
           });
           
-// Type definition aligned with ExcelJS's CellValue type
-type ExcelCellValue = string | number | boolean | Date | null | undefined;
-
           worksheet.eachRow((row, rowNumber) => {
             if (rowNumber === 1) return;
             
