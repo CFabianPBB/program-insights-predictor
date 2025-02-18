@@ -8,11 +8,16 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: false,
   },
+  poweredByHeader: false,
+  generateEtags: false,
+  compress: true,
   images: {
     unoptimized: true,
   },
-  reactStrictMode: true,
-  swcMinify: true,
+  distDir: '.next',
+  experimental: {
+    serverActions: true,
+  }
 };
 
 export default nextConfig;
