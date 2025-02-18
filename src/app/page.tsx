@@ -5,6 +5,29 @@ import ExcelJS from 'exceljs';
 import { Document, Paragraph, Packer, HeadingLevel, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
 
+interface ExcelRow {
+  'User Group': string;
+  'Program': string;
+  'Description': string;
+  'Total Cost': number;
+  'FTE': number;
+  'Personnel': number;
+  'NonPersonnel': number;
+}
+
+interface APIResponse {
+  choices: Array<{
+    message: {
+      content: string;
+    };
+  }>;
+}
+
+interface WorksheetColumn {
+  width?: number;
+  values: any[];
+}
+
 interface Program {
   department: string;
   programName: string;
@@ -113,34 +136,32 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
     }
   };
 
-  const readExcelFile = (file: File): Promise<any[]> => {
+  const readExcelFile = async (file: File): Promise<ExcelRow[]> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = async (e) => {
+      reader.onload = async (e: ProgressEvent<FileReader>) => {
         try {
           const buffer = e.target?.result as ArrayBuffer;
           const workbook = new ExcelJS.Workbook();
           await workbook.xlsx.load(buffer);
           
           const worksheet = workbook.getWorksheet(1);
-          const jsonData: any[] = [];
+          const jsonData: ExcelRow[] = [];
           
-          // Get headers from the first row
           const headers: string[] = [];
           worksheet.getRow(1).eachCell((cell) => {
             headers.push(cell.value?.toString() || '');
           });
           
-          // Get data from remaining rows
           worksheet.eachRow((row, rowNumber) => {
-            if (rowNumber === 1) return; // Skip header row
+            if (rowNumber === 1) return;
             
-            const rowData: any = {};
+            const rowData: Record<string, any> = {};
             row.eachCell((cell, colNumber) => {
               rowData[headers[colNumber - 1]] = cell.value;
             });
             
-            jsonData.push(rowData);
+            jsonData.push(rowData as ExcelRow);
           });
           
           resolve(jsonData);
