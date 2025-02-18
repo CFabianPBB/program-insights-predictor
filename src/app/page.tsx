@@ -23,11 +23,6 @@ interface APIResponse {
   }>;
 }
 
-interface WorksheetColumn {
-  width?: number;
-  values: any[];
-}
-
 interface Program {
   department: string;
   programName: string;
@@ -53,12 +48,12 @@ interface Program {
 }
 
 export default function Home() {
-  const [organizationName, setOrganizationName] = useState('');
+  const [organizationName, setOrganizationName] = useState<string>('');
   const [programs, setPrograms] = useState<Program[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const generatePrompt = (program: Program) => {
+  const generatePrompt = (program: Program): string => {
     return `As a government program analyst, analyze the following program and provide practical cost-saving and revenue-generating solutions that have been implemented in other jurisdictions in the US:
 
 PROGRAM DETAILS
@@ -104,7 +99,7 @@ Potential Revenue: Estimate potential revenue for ${organizationName} based on t
 Focus on real-world examples and provide specific, measurable outcomes. All solutions should be practical and implementable.`;
   };
   
-  const callPerplexityAPI = async (prompt: string) => {
+  const callPerplexityAPI = async (prompt: string): Promise<string> => {
     try {
       const response = await fetch('https://api.perplexity.ai/chat/completions', {
         method: 'POST',
@@ -128,11 +123,11 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
         throw new Error(`API call failed: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data: APIResponse = await response.json();
       return data.choices[0].message.content;
-    } catch (error) {
-      console.error('API error:', error);
-      throw error;
+    } catch (err: unknown) {
+      console.error('API error:', err);
+      throw err;
     }
   };
 
@@ -141,31 +136,43 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
       const reader = new FileReader();
       reader.onload = async (e: ProgressEvent<FileReader>) => {
         try {
-          const buffer = e.target?.result as ArrayBuffer;
+          if (!e.target?.result) {
+            throw new Error('Failed to read file');
+          }
+          
+          const buffer = e.target.result as ArrayBuffer;
           const workbook = new ExcelJS.Workbook();
           await workbook.xlsx.load(buffer);
           
           const worksheet = workbook.getWorksheet(1);
-          const jsonData: ExcelRow[] = [];
+          if (!worksheet) {
+            throw new Error('No worksheet found');
+          }
           
+          const jsonData: ExcelRow[] = [];
           const headers: string[] = [];
+          
           worksheet.getRow(1).eachCell((cell) => {
-            headers.push(cell.value?.toString() || '');
+            const value = cell.value?.toString() || '';
+            headers.push(value);
           });
           
           worksheet.eachRow((row, rowNumber) => {
             if (rowNumber === 1) return;
             
-            const rowData: Record<string, any> = {};
+            const rowData: Partial<ExcelRow> = {};
             row.eachCell((cell, colNumber) => {
-              rowData[headers[colNumber - 1]] = cell.value;
+              const header = headers[colNumber - 1];
+              if (header) {
+                rowData[header as keyof ExcelRow] = cell.value;
+              }
             });
             
             jsonData.push(rowData as ExcelRow);
           });
           
           resolve(jsonData);
-        } catch (error) {
+        } catch (err: unknown) {
           reject(new Error('Error processing Excel file'));
         }
       };
@@ -195,21 +202,21 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
       const data = await readExcelFile(file);
       const processedPrograms = await processData(data);
       setPrograms(processedPrograms);
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
   };
 
-  const processData = async (data: any[]): Promise<Program[]> => {
+  const processData = async (data: ExcelRow[]): Promise<Program[]> => {
     const processedPrograms: Program[] = [];
     
     for (const row of data) {
       const program: Program = {
-        department: row['User Group'] || '',
-        programName: row['Program'] || '',
-        description: row['Description'] || '',
+        department: row['User Group'],
+        programName: row['Program'],
+        description: row['Description'],
         totalCost: row['Total Cost'] || 0,
         fte: row['FTE'] || 0,
         personnel: row['Personnel'] || 0,
@@ -223,8 +230,8 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
         processedPrograms.push(program);
         
         await new Promise(resolve => setTimeout(resolve, 1000));
-      } catch (error) {
-        program.error = error instanceof Error ? error.message : 'Analysis failed';
+      } catch (err: unknown) {
+        program.error = err instanceof Error ? err.message : 'Analysis failed';
         processedPrograms.push(program);
       }
     }
@@ -290,10 +297,8 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
   };
 
   const extractFinancialImpact = (lines: string[]): string => {
-    // Join all lines to search for the potential savings/revenue text
     const fullText = lines.join(' ');
     
-    // Look for financial impact with specific patterns
     const savingsMatch = fullText.match(/Estimated savings of \$([\d,]+) to \$([\d,]+)/);
     const revenueMatch = fullText.match(/Estimated revenue of \$([\d,]+) to \$([\d,]+)/);
     
@@ -303,7 +308,6 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
       return `$${revenueMatch[1]} - $${revenueMatch[2]} annually`;
     }
     
-    // If no match found, look for any dollar amounts
     const dollarMatch = fullText.match(/\$[\d,]+ to \$[\d,]+/);
     if (dollarMatch) {
       return dollarMatch[0] + ' annually';
@@ -316,7 +320,6 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Program Analysis');
     
-    // Headers remain the same...
     const headers = [
       'Program Name',
       'Department',
@@ -329,7 +332,6 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
       'Financial Impact'
     ];
 
-    // Add and style header row...
     const headerRow = worksheet.addRow(headers);
     headerRow.font = { bold: true };
     headerRow.fill = {
@@ -338,7 +340,6 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
       fgColor: { argb: 'FFE0E0E0' }
     };
     
-    // Add data with improved financial impact extraction
     programs.forEach(program => {
       if (!program.analysis?.overview) return;
       
@@ -366,7 +367,6 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
           const description = lines.find(l => l.includes('Description:'))?.
             replace('Description:', '').trim() || 'N/A';
 
-          // Use the new function to extract financial impact
           const financialImpact = extractFinancialImpact(lines);
 
           const row = worksheet.addRow([
@@ -381,7 +381,6 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
             financialImpact
           ]);
 
-          // Style the row...
           row.getCell(3).numFmt = '$#,##0';
           row.getCell(4).numFmt = '#,##0.00';
           row.getCell(8).alignment = { wrapText: true };
@@ -397,8 +396,6 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
         }
       });
     });
-    
-    // Rest of the styling and export code remains the same...
     
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { 
