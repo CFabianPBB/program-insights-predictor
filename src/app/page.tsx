@@ -157,7 +157,8 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
             headers.push(value);
           });
           
-type ExcelCellValue = string | number | null | undefined;
+// Type definition aligned with ExcelJS's CellValue type
+type ExcelCellValue = string | number | boolean | Date | null | undefined;
 
           worksheet.eachRow((row, rowNumber) => {
             if (rowNumber === 1) return;
@@ -175,13 +176,24 @@ type ExcelCellValue = string | number | null | undefined;
             row.eachCell((cell, colNumber) => {
               const header = headers[colNumber - 1] as keyof ExcelRow;
               if (header && header in rowData) {
-                const cellValue: ExcelCellValue = cell.value;
+                const cellValue = cell.value;
                 
                 // Convert the cell value based on the header type
                 if (['Total Cost', 'FTE', 'Personnel', 'NonPersonnel'].includes(header)) {
-                  rowData[header] = typeof cellValue === 'number' ? cellValue : 0;
+                  if (typeof cellValue === 'number') {
+                    rowData[header] = cellValue;
+                  } else if (typeof cellValue === 'string') {
+                    const numValue = parseFloat(cellValue);
+                    rowData[header] = isNaN(numValue) ? 0 : numValue;
+                  } else {
+                    rowData[header] = 0;
+                  }
                 } else {
-                  rowData[header] = cellValue?.toString() || '';
+                  if (cellValue instanceof Date) {
+                    rowData[header] = cellValue.toISOString();
+                  } else {
+                    rowData[header] = cellValue?.toString() || '';
+                  }
                 }
               }
             });
