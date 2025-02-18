@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { Document, Paragraph, Packer, HeadingLevel, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
 
@@ -29,36 +29,14 @@ interface Program {
   error?: string;
 }
 
-interface Analysis {
-  programDetails: {
-    organization: string;
-    department: string;
-    program: string;
-    description: string;
-    totalCost: string;
-    fte: string;
-  };
-  costSavingSolutions: Array<{
-    organization: string;
-    description: string;
-    potentialSavings: string;
-  }>;
-  revenueGeneratingSolutions: Array<{
-    organization: string;
-    description: string;
-    potentialRevenue: string;
-  }>;
-}
 export default function Home() {
-  const [apiKey, setApiKey] = useState(process.env.NEXT_PUBLIC_PERPLEXITY_API_KEY || '');
   const [organizationName, setOrganizationName] = useState('');
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [rawData, setRawData] = useState<any>(null);
 
   const generatePrompt = (program: Program) => {
-    return `Analyze this government program and provide ONLY the following sections with their exact headers. DO NOT include any additional narrative or thinking process:
+    return `As a government program analyst, analyze the following program and provide practical cost-saving and revenue-generating solutions that have been implemented in other jurisdictions in the US:
 
 PROGRAM DETAILS
 Organization: ${organizationName}
@@ -68,58 +46,54 @@ Description: ${program.description || 'Not provided'}
 Total Cost: $${program.totalCost?.toLocaleString() || 'Not provided'}
 FTE: ${program.fte || 'Not provided'}
 
+Based on real examples from other jurisdictions, provide:
+
 COST-SAVING SOLUTIONS
+Identify 3 specific examples referencing the names of other cities/counties who have reduced costs and saved money in similar programs:
 
-1. Organization: [City/County/State]
-Description: [Provide 4-5 detailed sentences about the specific solution implemented. Include implementation details, challenges overcome, specific processes changed, and measurable outcomes achieved. Be specific about the methods used and results obtained.]
-Potential Savings: [Specific estimate for ${organizationName}]
+1. Organization: [Name a specific city/county that implemented this solution]
+Description: Describe their specific implementation, including processes changed, technology used, or staff reallocation. Include measurable outcomes they achieved.
+Potential Savings: Estimate potential savings for ${organizationName} based on their results.
 
-2. Organization: [Different City/County/State]
-Description: [Provide 4-5 detailed sentences about the specific solution implemented. Include implementation details, challenges overcome, specific processes changed, and measurable outcomes achieved. Be specific about the methods used and results obtained.]
-Potential Savings: [Specific estimate for ${organizationName}]
+2. Organization: [Name a different city/county that implemented this solution]
+Description: Describe their specific implementation, including processes changed, technology used, or staff reallocation. Include measurable outcomes they achieved.
+Potential Savings: Estimate potential savings for ${organizationName} based on their results.
 
-3. Organization: [Different City/County/State]
-Description: [Provide 4-5 detailed sentences about the specific solution implemented. Include implementation details, challenges overcome, specific processes changed, and measurable outcomes achieved. Be specific about the methods used and results obtained.]
-Potential Savings: [Specific estimate for ${organizationName}]
+3. Organization: [Name a different city/county that implemented this solution]
+Description: Describe their specific implementation, including processes changed, technology used, or staff reallocation. Include measurable outcomes they achieved.
+Potential Savings: Estimate potential savings for ${organizationName} based on their results.
 
 REVENUE-GENERATING SOLUTIONS
+Identify 3 specific examples where other cities/counties have generated entrepreneurial revenue to offset subsidization in similar programs:
 
-1. Organization: [City/County/State]
-Description: [Provide 4-5 detailed sentences about the specific solution implemented. Include implementation details, challenges overcome, specific processes changed, and measurable outcomes achieved. Be specific about the methods used and results obtained.]
-Potential Revenue: [Specific estimate for ${organizationName}]
+1. Organization: [Name a specific city/county that implemented this solution]
+Description: Describe their specific implementation, including new services offered, fee structures changed, or processes improved. Include measurable outcomes they achieved.
+Potential Revenue: Estimate potential revenue for ${organizationName} based on their results.
 
-2. Organization: [Different City/County/State]
-Description: [Provide 4-5 detailed sentences about the specific solution implemented. Include implementation details, challenges overcome, specific processes changed, and measurable outcomes achieved. Be specific about the methods used and results obtained.]
-Potential Revenue: [Specific estimate for ${organizationName}]
+2. Organization: [Name a different city/county that implemented this solution]
+Description: Describe their specific implementation, including new services offered, fee structures changed, or processes improved. Include measurable outcomes they achieved.
+Potential Revenue: Estimate potential revenue for ${organizationName} based on their results.
 
-3. Organization: [Different City/County/State]
-Description: [Provide 4-5 detailed sentences about the specific solution implemented. Include implementation details, challenges overcome, specific processes changed, and measurable outcomes achieved. Be specific about the methods used and results obtained.]
-Potential Revenue: [Specific estimate for ${organizationName}]
+3. Organization: [Name a different city/county that implemented this solution]
+Description: Describe their specific implementation, including new services offered, fee structures changed, or processes improved. Include measurable outcomes they achieved.
+Potential Revenue: Estimate potential revenue for ${organizationName} based on their results.
 
-Required:
-- Each description must be 4-5 detailed sentences
-- Include specific implementation details and measurable results
-- Use only real examples from different organizations
-- Focus on practical, implemented solutions
-- Make estimates proportional to ${organizationName}'s program size and scope
-- DO NOT include any analysis narrative or thinking process
-- DO NOT include any text starting with "think" or "let me"`;
+Focus on real-world examples and provide specific, measurable outcomes. All solutions should be practical and implementable.`;
   };
+  
   const callPerplexityAPI = async (prompt: string) => {
     try {
-      console.log("Making API call...");
       const response = await fetch('https://api.perplexity.ai/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_PERPLEXITY_API_KEY}`,
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
         },
         body: JSON.stringify({
-          model: 'sonar',  // Changed from sonar-reasoning to get more direct responses
+          model: 'sonar',
           messages: [{
             role: 'system',
-            content: 'You are a precise government program analyst. Provide only structured analysis with no narrative or thinking process.'
+            content: 'You are a precise government program analyst. Provide only structured answers with no narrative or thinking process.'
           }, {
             role: 'user',
             content: prompt
@@ -128,54 +102,14 @@ Required:
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Full error response:", errorText);
-        throw new Error(`API call failed: ${response.status} ${errorText}`);
+        throw new Error(`API call failed: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log("API response received");
       return data.choices[0].message.content;
     } catch (error) {
-      console.error('Detailed API error:', error);
+      console.error('API error:', error);
       throw error;
-    }
-  };
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    console.log("File upload triggered");
-    
-    if (!apiKey) {
-      setError('Please enter your Perplexity API key first');
-      return;
-    }
-
-    if (!organizationName) {
-      setError('Please enter your organization name first');
-      return;
-    }
-
-    const file = event.target.files?.[0];
-    if (!file) {
-      console.log("No file selected");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      console.log("Reading Excel file...");
-      const data = await readExcelFile(file);
-      setRawData(data);
-      console.log("Processing data...");
-      const processedPrograms = await processData(data);
-      setPrograms(processedPrograms);
-    } catch (err) {
-      console.error("Error:", err);
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -184,10 +118,31 @@ Required:
       const reader = new FileReader();
       reader.onload = async (e) => {
         try {
-          const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-          const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+          const buffer = e.target?.result as ArrayBuffer;
+          const workbook = new ExcelJS.Workbook();
+          await workbook.xlsx.load(buffer);
+          
+          const worksheet = workbook.getWorksheet(1);
+          const jsonData: any[] = [];
+          
+          // Get headers from the first row
+          const headers: string[] = [];
+          worksheet.getRow(1).eachCell((cell) => {
+            headers.push(cell.value?.toString() || '');
+          });
+          
+          // Get data from remaining rows
+          worksheet.eachRow((row, rowNumber) => {
+            if (rowNumber === 1) return; // Skip header row
+            
+            const rowData: any = {};
+            row.eachCell((cell, colNumber) => {
+              rowData[headers[colNumber - 1]] = cell.value;
+            });
+            
+            jsonData.push(rowData);
+          });
+          
           resolve(jsonData);
         } catch (error) {
           reject(new Error('Error processing Excel file'));
@@ -197,6 +152,35 @@ Required:
       reader.readAsArrayBuffer(file);
     });
   };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!process.env.NEXT_PUBLIC_PERPLEXITY_API_KEY) {
+      setError('Perplexity API key not found in environment variables');
+      return;
+    }
+
+    if (!organizationName) {
+      setError('Please enter your organization name first');
+      return;
+    }
+
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const data = await readExcelFile(file);
+      const processedPrograms = await processData(data);
+      setPrograms(processedPrograms);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const processData = async (data: any[]): Promise<Program[]> => {
     const processedPrograms: Program[] = [];
     
@@ -235,19 +219,14 @@ Required:
           new Paragraph({
             text: `Program Analysis for ${organizationName}`,
             heading: HeadingLevel.TITLE,
-            spacing: {
-              after: 400
-            }
+            spacing: { after: 400 }
           }),
           ...programs.flatMap(program => {
             const sections = [
               new Paragraph({
                 text: program.programName,
                 heading: HeadingLevel.HEADING_1,
-                spacing: {
-                  before: 400,
-                  after: 200
-                }
+                spacing: { before: 400, after: 200 }
               }),
               new Paragraph({
                 children: [
@@ -266,25 +245,15 @@ Required:
                   new TextRun({ text: 'FTE: ', bold: true }),
                   new TextRun(program.fte?.toString() || 'N/A')
                 ],
-                spacing: {
-                  after: 200
-                }
+                spacing: { after: 200 }
               })
             ];
 
             if (program.analysis?.overview) {
-              const analysisText = program.analysis.overview
-                .split('\n')
-                .filter(line => !line.toLowerCase().includes('<think>'))
-                .join('\n');
-
               sections.push(
                 new Paragraph({
-                  text: analysisText,
-                  spacing: {
-                    before: 200,
-                    after: 400
-                  }
+                  text: program.analysis.overview,
+                  spacing: { before: 200, after: 400 }
                 })
               );
             }
@@ -299,77 +268,124 @@ Required:
     saveAs(blob, `${organizationName.replace(/\s+/g, '-')}-Program-Analysis.docx`);
   };
 
-  const exportToExcel = () => {
-    const excelData = programs.flatMap(program => {
-      if (!program.analysis?.overview) return [];
-
-      const rows = [];
-      const sections = program.analysis.overview.split('\n\n');
-      
-      let currentSection = '';
-      let currentItem: any = {
-        'Program Name': program.programName,
-        'Department': program.department,
-        'Total Cost': program.totalCost,
-        'FTE': program.fte
-      };
-
-      for (const section of sections) {
-        if (section.includes('COST-SAVING SOLUTIONS')) {
-          currentSection = 'cost-saving';
-          continue;
-        } else if (section.includes('REVENUE-GENERATING SOLUTIONS')) {
-          currentSection = 'revenue';
-          continue;
-        }
-
-        if (section.includes('Organization:')) {
-          if (Object.keys(currentItem).length > 4) {
-            rows.push(currentItem);
-            currentItem = {
-              'Program Name': '',
-              'Department': '',
-              'Total Cost': '',
-              'FTE': ''
-            };
-          }
-
-          const lines = section.split('\n');
-          currentItem['Solution Type'] = currentSection === 'cost-saving' ? 'Cost Savings' : 'Revenue Generation';
-          currentItem['Organization'] = lines[0].replace('Organization:', '').trim();
-          currentItem['Description'] = lines[1].replace('Description:', '').trim();
-          currentItem['Potential Impact'] = lines[2].replace(
-            currentSection === 'cost-saving' ? 'Potential Savings:' : 'Potential Revenue:', 
-            ''
-          ).trim();
-        }
-      }
-
-      if (Object.keys(currentItem).length > 4) {
-        rows.push(currentItem);
-      }
-
-      return rows;
-    });
-
-    const ws = XLSX.utils.json_to_sheet(excelData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Program Analysis');
+  const extractFinancialImpact = (lines: string[]): string => {
+    // Join all lines to search for the potential savings/revenue text
+    const fullText = lines.join(' ');
     
-    // Auto-size columns
-    const colWidths = excelData.reduce((widths: any, row) => {
-      Object.entries(row).forEach(([key, value]) => {
-        const length = value ? value.toString().length : 0;
-        widths[key] = Math.max(widths[key] || 0, length);
-      });
-      return widths;
-    }, {});
-
-    ws['!cols'] = Object.values(colWidths).map(width => ({ wch: Math.min(width + 2, 50) }));
-
-    XLSX.writeFile(wb, `${organizationName.replace(/\s+/g, '-')}-Program-Analysis.xlsx`);
+    // Look for financial impact with specific patterns
+    const savingsMatch = fullText.match(/Estimated savings of \$([\d,]+) to \$([\d,]+)/);
+    const revenueMatch = fullText.match(/Estimated revenue of \$([\d,]+) to \$([\d,]+)/);
+    
+    if (savingsMatch) {
+      return `$${savingsMatch[1]} - $${savingsMatch[2]} annually`;
+    } else if (revenueMatch) {
+      return `$${revenueMatch[1]} - $${revenueMatch[2]} annually`;
+    }
+    
+    // If no match found, look for any dollar amounts
+    const dollarMatch = fullText.match(/\$[\d,]+ to \$[\d,]+/);
+    if (dollarMatch) {
+      return dollarMatch[0] + ' annually';
+    }
+    
+    return 'Not specified';
   };
 
+  const exportToExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Program Analysis');
+    
+    // Headers remain the same...
+    const headers = [
+      'Program Name',
+      'Department',
+      'Total Cost',
+      'FTE',
+      'Program Description',
+      'Solution Type',
+      'Organization',
+      'Implementation Details',
+      'Financial Impact'
+    ];
+
+    // Add and style header row...
+    const headerRow = worksheet.addRow(headers);
+    headerRow.font = { bold: true };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+    
+    // Add data with improved financial impact extraction
+    programs.forEach(program => {
+      if (!program.analysis?.overview) return;
+      
+      const sections = program.analysis.overview.split('\n\n');
+      let currentSection = '';
+      
+      sections.forEach(section => {
+        if (!section) return;
+        
+        if (section.includes('COST-SAVING SOLUTIONS')) {
+          currentSection = 'Cost Savings';
+          return;
+        } 
+        if (section.includes('REVENUE-GENERATING SOLUTIONS')) {
+          currentSection = 'Revenue Generation';
+          return;
+        } 
+        
+        if (section.includes('Organization:')) {
+          const lines = section.split('\n').filter(line => line.trim());
+          
+          const organization = lines.find(l => l.includes('Organization:'))?.
+            replace('Organization:', '').trim() || 'N/A';
+            
+          const description = lines.find(l => l.includes('Description:'))?.
+            replace('Description:', '').trim() || 'N/A';
+
+          // Use the new function to extract financial impact
+          const financialImpact = extractFinancialImpact(lines);
+
+          const row = worksheet.addRow([
+            program.programName || 'N/A',
+            program.department || 'N/A',
+            program.totalCost || 0,
+            program.fte || 0,
+            program.description || 'N/A',
+            currentSection || 'N/A',
+            organization,
+            description,
+            financialImpact
+          ]);
+
+          // Style the row...
+          row.getCell(3).numFmt = '$#,##0';
+          row.getCell(4).numFmt = '#,##0.00';
+          row.getCell(8).alignment = { wrapText: true };
+          row.getCell(9).alignment = { wrapText: true };
+          
+          if (worksheet.rowCount % 2 === 0) {
+            row.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFFDFDFD' }
+            };
+          }
+        }
+      });
+    });
+    
+    // Rest of the styling and export code remains the same...
+    
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    });
+    saveAs(blob, `${organizationName.replace(/\s+/g, '-')}-Program-Analysis.xlsx`);
+  };
+  
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -378,37 +394,23 @@ Required:
       maximumFractionDigits: 0
     }).format(amount);
   };
+
   return (
     <main className="flex min-h-screen flex-col items-center p-8 bg-gray-50">
       <div className="w-full max-w-4xl bg-white p-8 rounded-lg shadow-sm">
-        <h1 className="text-4xl font-bold mb-8 text-gray-800">Program Insights Analyzer</h1>
+        <h1 className="text-4xl font-bold mb-8 text-gray-800">Program Insights Predictor</h1>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700">
-              Perplexity API Key
-            </label>
-            <input
-              type="password"
-              className="w-full p-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Enter your Perplexity API key"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700">
-              Organization Name
-            </label>
-            <input
-              type="text"
-              className="w-full p-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={organizationName}
-              onChange={(e) => setOrganizationName(e.target.value)}
-              placeholder="e.g., City of Fort Worth, Harris County, Miami-Dade Public Schools"
-            />
-          </div>
+        <div className="mb-8">
+          <label className="block text-sm font-medium mb-2 text-gray-700">
+            Organization Name
+          </label>
+          <input
+            type="text"
+            className="w-full p-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            value={organizationName}
+            onChange={(e) => setOrganizationName(e.target.value)}
+            placeholder="e.g., City of Fort Worth, Harris County"
+          />
         </div>
 
         <div className="mb-8">
