@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "npm install -D typescript @types/react @types/node @types/react-dom"
   },
   "dependencies": {
     "@types/file-saver": "^2.0.7",
