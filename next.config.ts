@@ -16,7 +16,10 @@ const nextConfig: NextConfig = {
   },
   distDir: '.next',
   experimental: {
-    serverActions: true,
+    serverActions: {
+      bodySizeLimit: '2mb',
+      allowedOrigins: ['localhost:3000']
+    }
   }
 };
 
