@@ -18,7 +18,10 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: '2mb',
-      allowedOrigins: ['localhost:3000']
+      allowedOrigins: [
+        'localhost:3000',
+        'program-insights-predictor.onrender.com'
+      ]
     }
   }
 };
