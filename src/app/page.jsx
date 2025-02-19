@@ -5,55 +5,13 @@ import ExcelJS from 'exceljs';
 import { Document, Paragraph, Packer, HeadingLevel, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
 
-interface ExcelRow {
-  'User Group': string;
-  'Program': string;
-  'Description': string;
-  'Total Cost': number;
-  'FTE': number;
-  'Personnel': number;
-  'NonPersonnel': number;
-}
-
-interface APIResponse {
-  choices: Array<{
-    message: {
-      content: string;
-    };
-  }>;
-}
-
-interface Program {
-  department: string;
-  programName: string;
-  description: string;
-  totalCost: number;
-  fte?: number;
-  personnel?: number;
-  nonPersonnel?: number;
-  analysis?: {
-    overview?: string;
-    costSavings?: Array<{
-      organization: string;
-      description: string;
-      potentialSavings: string;
-    }>;
-    revenueGeneration?: Array<{
-      organization: string;
-      description: string;
-      potentialRevenue: string;
-    }>;
-  };
-  error?: string;
-}
-
 export default function Home() {
-  const [organizationName, setOrganizationName] = useState<string>('');
-  const [programs, setPrograms] = useState<Program[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [organizationName, setOrganizationName] = useState('');
+  const [programs, setPrograms] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const generatePrompt = (program: Program): string => {
+  const generatePrompt = (program) => {
     return `As a government program analyst, analyze the following program and provide practical cost-saving and revenue-generating solutions that have been implemented in other jurisdictions in the US:
 
 PROGRAM DETAILS
@@ -99,7 +57,7 @@ Potential Revenue: Estimate potential revenue for ${organizationName} based on t
 Focus on real-world examples and provide specific, measurable outcomes. All solutions should be practical and implementable.`;
   };
   
-  const callPerplexityAPI = async (prompt: string): Promise<string> => {
+  const callPerplexityAPI = async (prompt) => {
     try {
       const response = await fetch('https://api.perplexity.ai/chat/completions', {
         method: 'POST',
@@ -123,24 +81,24 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
         throw new Error(`API call failed: ${response.status}`);
       }
 
-      const data: APIResponse = await response.json();
+      const data = await response.json();
       return data.choices[0].message.content;
-    } catch (err: unknown) {
+    } catch (err) {
       console.error('API error:', err);
       throw err;
     }
   };
 
-  const readExcelFile = async (file: File): Promise<ExcelRow[]> => {
+  const readExcelFile = async (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = async (e: ProgressEvent<FileReader>) => {
+      reader.onload = async (e) => {
         try {
           if (!e.target?.result) {
             throw new Error('Failed to read file');
           }
           
-          const buffer = e.target.result as ArrayBuffer;
+          const buffer = e.target.result;
           const workbook = new ExcelJS.Workbook();
           await workbook.xlsx.load(buffer);
           
@@ -149,8 +107,8 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
             throw new Error('No worksheet found');
           }
           
-          const jsonData: ExcelRow[] = [];
-          const headers: string[] = [];
+          const jsonData = [];
+          const headers = [];
           
           worksheet.getRow(1).eachCell((cell) => {
             const value = cell.value?.toString() || '';
@@ -160,7 +118,7 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
           worksheet.eachRow((row, rowNumber) => {
             if (rowNumber === 1) return;
             
-            const rowData: Record<keyof ExcelRow, string | number> = {
+            const rowData = {
               'User Group': '',
               'Program': '',
               'Description': '',
@@ -171,11 +129,10 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
             };
             
             row.eachCell((cell, colNumber) => {
-              const header = headers[colNumber - 1] as keyof ExcelRow;
+              const header = headers[colNumber - 1];
               if (header && header in rowData) {
                 const cellValue = cell.value;
                 
-                // Convert the cell value based on the header type
                 if (['Total Cost', 'FTE', 'Personnel', 'NonPersonnel'].includes(header)) {
                   if (typeof cellValue === 'number') {
                     rowData[header] = cellValue;
@@ -195,11 +152,11 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
               }
             });
             
-            jsonData.push(rowData as ExcelRow);
+            jsonData.push(rowData);
           });
           
           resolve(jsonData);
-        } catch (error: unknown) {
+        } catch (error) {
           console.error('Excel processing error:', error);
           reject(new Error(error instanceof Error ? error.message : 'Error processing Excel file'));
         }
@@ -209,7 +166,7 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
     });
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event) => {
     if (!process.env.NEXT_PUBLIC_PERPLEXITY_API_KEY) {
       setError('Perplexity API key not found in environment variables');
       return;
@@ -230,18 +187,18 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
       const data = await readExcelFile(file);
       const processedPrograms = await processData(data);
       setPrograms(processedPrograms);
-    } catch (err: unknown) {
+    } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
   };
 
-  const processData = async (data: ExcelRow[]): Promise<Program[]> => {
-    const processedPrograms: Program[] = [];
+  const processData = async (data) => {
+    const processedPrograms = [];
     
     for (const row of data) {
-      const program: Program = {
+      const program = {
         department: row['User Group'],
         programName: row['Program'],
         description: row['Description'],
@@ -258,7 +215,7 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
         processedPrograms.push(program);
         
         await new Promise(resolve => setTimeout(resolve, 1000));
-      } catch (err: unknown) {
+      } catch (err) {
         program.error = err instanceof Error ? err.message : 'Analysis failed';
         processedPrograms.push(program);
       }
@@ -324,7 +281,7 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
     saveAs(blob, `${organizationName.replace(/\s+/g, '-')}-Program-Analysis.docx`);
   };
 
-  const extractFinancialImpact = (lines: string[]): string => {
+  const extractFinancialImpact = (lines) => {
     const fullText = lines.join(' ');
     
     const savingsMatch = fullText.match(/Estimated savings of \$([\d,]+) to \$([\d,]+)/);
@@ -344,100 +301,100 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
     return 'Not specified';
   };
 
-  const exportToExcel = async (): Promise<void> => {
+  const exportToExcel = async () => {
     try {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Program Analysis');
     
-    const headers = [
-      'Program Name',
-      'Department',
-      'Total Cost',
-      'FTE',
-      'Program Description',
-      'Solution Type',
-      'Organization',
-      'Implementation Details',
-      'Financial Impact'
-    ];
+      const headers = [
+        'Program Name',
+        'Department',
+        'Total Cost',
+        'FTE',
+        'Program Description',
+        'Solution Type',
+        'Organization',
+        'Implementation Details',
+        'Financial Impact'
+      ];
 
-    const headerRow = worksheet.addRow(headers);
-    headerRow.font = { bold: true };
-    headerRow.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFE0E0E0' }
-    };
-    
-    programs.forEach(program => {
-      if (!program.analysis?.overview) return;
+      const headerRow = worksheet.addRow(headers);
+      headerRow.font = { bold: true };
+      headerRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE0E0E0' }
+      };
       
-      const sections = program.analysis.overview.split('\n\n');
-      let currentSection = '';
-      
-      sections.forEach(section => {
-        if (!section) return;
+      programs.forEach(program => {
+        if (!program.analysis?.overview) return;
         
-        if (section.includes('COST-SAVING SOLUTIONS')) {
-          currentSection = 'Cost Savings';
-          return;
-        } 
-        if (section.includes('REVENUE-GENERATING SOLUTIONS')) {
-          currentSection = 'Revenue Generation';
-          return;
-        } 
+        const sections = program.analysis.overview.split('\n\n');
+        let currentSection = '';
         
-        if (section.includes('Organization:')) {
-          const lines = section.split('\n').filter(line => line.trim());
+        sections.forEach(section => {
+          if (!section) return;
           
-          const organization = lines.find(l => l.includes('Organization:'))?.
-            replace('Organization:', '').trim() || 'N/A';
+          if (section.includes('COST-SAVING SOLUTIONS')) {
+            currentSection = 'Cost Savings';
+            return;
+          } 
+          if (section.includes('REVENUE-GENERATING SOLUTIONS')) {
+            currentSection = 'Revenue Generation';
+            return;
+          } 
+          
+          if (section.includes('Organization:')) {
+            const lines = section.split('\n').filter(line => line.trim());
             
-          const description = lines.find(l => l.includes('Description:'))?.
-            replace('Description:', '').trim() || 'N/A';
+            const organization = lines.find(l => l.includes('Organization:'))?.
+              replace('Organization:', '').trim() || 'N/A';
+              
+            const description = lines.find(l => l.includes('Description:'))?.
+              replace('Description:', '').trim() || 'N/A';
 
-          const financialImpact = extractFinancialImpact(lines);
+            const financialImpact = extractFinancialImpact(lines);
 
-          const row = worksheet.addRow([
-            program.programName || 'N/A',
-            program.department || 'N/A',
-            program.totalCost || 0,
-            program.fte || 0,
-            program.description || 'N/A',
-            currentSection || 'N/A',
-            organization,
-            description,
-            financialImpact
-          ]);
+            const row = worksheet.addRow([
+              program.programName || 'N/A',
+              program.department || 'N/A',
+              program.totalCost || 0,
+              program.fte || 0,
+              program.description || 'N/A',
+              currentSection || 'N/A',
+              organization,
+              description,
+              financialImpact
+            ]);
 
-          row.getCell(3).numFmt = '$#,##0';
-          row.getCell(4).numFmt = '#,##0.00';
-          row.getCell(8).alignment = { wrapText: true };
-          row.getCell(9).alignment = { wrapText: true };
-          
-          if (worksheet.rowCount % 2 === 0) {
-            row.fill = {
-              type: 'pattern',
-              pattern: 'solid',
-              fgColor: { argb: 'FFFDFDFD' }
-            };
+            row.getCell(3).numFmt = '$#,##0';
+            row.getCell(4).numFmt = '#,##0.00';
+            row.getCell(8).alignment = { wrapText: true };
+            row.getCell(9).alignment = { wrapText: true };
+            
+            if (worksheet.rowCount % 2 === 0) {
+              row.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFFDFDFD' }
+              };
+            }
           }
-        }
+        });
       });
-    });
-    
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { 
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-    });
-    saveAs(blob, `${organizationName.replace(/\s+/g, '-')}-Program-Analysis.xlsx`);
-    } catch (error: unknown) {
+      
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+      saveAs(blob, `${organizationName.replace(/\s+/g, '-')}-Program-Analysis.xlsx`);
+    } catch (error) {
       console.error('Error exporting to Excel:', error instanceof Error ? error.message : 'Unknown error');
       throw error;
     }
   };
   
-  const formatCurrency = (amount: number): string => {
+  const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
