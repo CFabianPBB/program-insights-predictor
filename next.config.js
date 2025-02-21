@@ -6,8 +6,17 @@ const nextConfig = {
   distDir: '.next',
   images: {
     unoptimized: true
+  },
+  experimental: {
+    outputFileTracingRoot: undefined,
+    outputFileTracingExcludes: {
+      '*': [
+        'node_modules/@swc/core-linux-x64-gnu',
+        'node_modules/@swc/core-linux-x64-musl',
+        'node_modules/@esbuild/linux-x64',
+      ],
+    },
   }
-  // Remove the assetPrefix and env configurations
 };
 
 module.exports = nextConfig;
