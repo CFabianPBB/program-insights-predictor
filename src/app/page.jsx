@@ -229,54 +229,127 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
       sections: [{
         properties: {},
         children: [
+          // Title
           new Paragraph({
             text: `Program Analysis for ${organizationName}`,
             heading: HeadingLevel.TITLE,
-            spacing: { after: 400 }
+            spacing: { after: 400 },
+            alignment: 'center'
           }),
+          
           ...programs.flatMap(program => {
             const sections = [
+              // Program Name as Heading
               new Paragraph({
                 text: program.programName,
                 heading: HeadingLevel.HEADING_1,
                 spacing: { before: 400, after: 200 }
               }),
+  
+              // Department info with proper styling
               new Paragraph({
                 children: [
-                  new TextRun({ text: 'Department: ', bold: true }),
+                  new TextRun({ text: "Department: ", bold: true }),
                   new TextRun(program.department)
-                ]
+                ],
+                spacing: { after: 200 }
               }),
               new Paragraph({
                 children: [
-                  new TextRun({ text: 'Total Cost: ', bold: true }),
+                  new TextRun({ text: "Total Cost: ", bold: true }),
                   new TextRun(formatCurrency(program.totalCost))
                 ]
               }),
               new Paragraph({
                 children: [
-                  new TextRun({ text: 'FTE: ', bold: true }),
-                  new TextRun(program.fte?.toString() || 'N/A')
+                  new TextRun({ text: "FTE: ", bold: true }),
+                  new TextRun(`${program.fte}`),
                 ],
                 spacing: { after: 200 }
               })
             ];
-
+  
+            // Format analysis content
             if (program.analysis?.overview) {
-              sections.push(
-                new Paragraph({
-                  text: program.analysis.overview,
-                  spacing: { before: 200, after: 400 }
-                })
-              );
+              const analysisLines = program.analysis.overview.split('\n');
+              let currentHeading = '';
+  
+              analysisLines.forEach(line => {
+                if (line.includes('COST-SAVING SOLUTIONS')) {
+                  sections.push(
+                    new Paragraph({
+                      text: "COST-SAVING SOLUTIONS",
+                      heading: HeadingLevel.HEADING_2,
+                      spacing: { before: 200, after: 200 }
+                    })
+                  );
+                  currentHeading = 'cost-saving';
+                } else if (line.includes('REVENUE-GENERATING SOLUTIONS')) {
+                  sections.push(
+                    new Paragraph({
+                      text: "REVENUE-GENERATING SOLUTIONS",
+                      heading: HeadingLevel.HEADING_2,
+                      spacing: { before: 200, after: 200 }
+                    })
+                  );
+                  currentHeading = 'revenue';
+                } else if (line.includes('Organization:')) {
+                  sections.push(
+                    new Paragraph({
+                      children: [
+                        new TextRun({ text: line.replace('Organization:', 'Organization: '), bold: true })
+                      ],
+                      spacing: { before: 200 }
+                    })
+                  );
+                } else if (line.includes('Description:')) {
+                  sections.push(
+                    new Paragraph({
+                      children: [
+                        new TextRun({ text: 'Description: ', bold: true }),
+                        new TextRun(line.replace('Description:', '').trim())
+                      ]
+                    })
+                  );
+                } else if (line.includes('Measurable Outcomes:')) {
+                  sections.push(
+                    new Paragraph({
+                      children: [
+                        new TextRun({ text: 'Measurable Outcomes: ', bold: true }),
+                        new TextRun(line.replace('Measurable Outcomes:', '').trim())
+                      ]
+                    })
+                  );
+                } else if (line.includes('Potential Savings:') || line.includes('Potential Revenue:')) {
+                  sections.push(
+                    new Paragraph({
+                      children: [
+                        new TextRun({ 
+                          text: line.includes('Savings') ? 'Potential Savings: ' : 'Potential Revenue: ', 
+                          bold: true 
+                        }),
+                        new TextRun(line.replace(/(Potential Savings:|Potential Revenue:)/, '').trim())
+                      ],
+                      spacing: { after: 200 }
+                    })
+                  );
+                } else if (line.trim()) {
+                  sections.push(
+                    new Paragraph({
+                      text: line,
+                      spacing: { after: 100 }
+                    })
+                  );
+                }
+              });
             }
-
+  
             return sections;
           })
         ]
       }]
     });
-
+  
     const blob = await Packer.toBlob(doc);
     saveAs(blob, `${organizationName.replace(/\s+/g, '-')}-Program-Analysis.docx`);
   };
