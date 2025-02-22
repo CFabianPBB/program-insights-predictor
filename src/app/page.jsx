@@ -229,16 +229,9 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
       sections: [{
         properties: {},
         children: [
-          // Title with better formatting
+          // Title
           new Paragraph({
-            children: [
-              new TextRun({
-                text: `Program Analysis for ${organizationName}`,
-                size: 32,
-                bold: true,
-                font: 'Times New Roman'
-              })
-            ],
+            text: `Program Analysis for ${organizationName}`,
             heading: HeadingLevel.TITLE,
             spacing: { after: 400 },
             alignment: 'center'
@@ -246,40 +239,33 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
           
           ...programs.flatMap(program => {
             const sections = [
-              // Program Name as Heading with blue color
+              // Program Name as Heading
               new Paragraph({
-                children: [
-                  new TextRun({
-                    text: program.programName,
-                    size: 28,
-                    color: '2B579A',
-                    font: 'Times New Roman'
-                  })
-                ],
+                text: program.programName,
                 heading: HeadingLevel.HEADING_1,
                 spacing: { before: 400, after: 200 }
               }),
   
-              // Department info in a cleaner format
+              // Department info with proper styling
               new Paragraph({
                 children: [
-                  new TextRun({ text: "Department: ", bold: true, font: 'Times New Roman' }),
-                  new TextRun({ text: program.department, font: 'Times New Roman' })
+                  new TextRun({ text: "Department: ", bold: true }),
+                  new TextRun(program.department)
                 ],
                 spacing: { after: 200 }
               }),
               new Paragraph({
                 children: [
-                  new TextRun({ text: "Total Cost: ", bold: true, font: 'Times New Roman' }),
-                  new TextRun({ text: formatCurrency(program.totalCost), font: 'Times New Roman' })
+                  new TextRun({ text: "Total Cost: ", bold: true }),
+                  new TextRun(formatCurrency(program.totalCost))
                 ]
               }),
               new Paragraph({
                 children: [
-                  new TextRun({ text: "FTE: ", bold: true, font: 'Times New Roman' }),
-                  new TextRun({ text: `${program.fte}`, font: 'Times New Roman' })
+                  new TextRun({ text: "FTE: ", bold: true }),
+                  new TextRun(`${program.fte}`),
                 ],
-                spacing: { after: 300 }
+                spacing: { after: 200 }
               })
             ];
   
@@ -287,94 +273,71 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
             if (program.analysis?.overview) {
               const analysisLines = program.analysis.overview.split('\n');
               let currentHeading = '';
-              let solutionCount = 0;
   
               analysisLines.forEach(line => {
                 if (line.includes('COST-SAVING SOLUTIONS')) {
                   sections.push(
                     new Paragraph({
-                      children: [
-                        new TextRun({
-                          text: "COST-SAVING SOLUTIONS",
-                          size: 24,
-                          bold: true,
-                          font: 'Times New Roman'
-                        })
-                      ],
-                      spacing: { before: 300, after: 200 }
+                      text: "COST-SAVING SOLUTIONS",
+                      heading: HeadingLevel.HEADING_2,
+                      spacing: { before: 200, after: 200 }
                     })
                   );
-                  solutionCount = 0;
                   currentHeading = 'cost-saving';
                 } else if (line.includes('REVENUE-GENERATING SOLUTIONS')) {
                   sections.push(
                     new Paragraph({
-                      children: [
-                        new TextRun({
-                          text: "REVENUE-GENERATING SOLUTIONS",
-                          size: 24,
-                          bold: true,
-                          font: 'Times New Roman'
-                        })
-                      ],
-                      spacing: { before: 300, after: 200 }
+                      text: "REVENUE-GENERATING SOLUTIONS",
+                      heading: HeadingLevel.HEADING_2,
+                      spacing: { before: 200, after: 200 }
                     })
                   );
-                  solutionCount = 0;
                   currentHeading = 'revenue';
-                } else if (line.match(/^\d+\.\s+\*\*Organization/)) {
-                  solutionCount++;
+                } else if (line.includes('Organization:')) {
                   sections.push(
                     new Paragraph({
                       children: [
-                        new TextRun({
-                          text: `${solutionCount}. `,
-                          bold: true,
-                          font: 'Times New Roman'
-                        }),
-                        new TextRun({
-                          text: `Organization: ${line.split('Organization:**:')[1]?.trim()}`,
-                          bold: true,
-                          font: 'Times New Roman'
-                        })
+                        new TextRun({ text: line.replace('Organization:', 'Organization: '), bold: true })
                       ],
                       spacing: { before: 200 }
                     })
                   );
-                } else if (line.includes('**Description**:')) {
+                } else if (line.includes('Description:')) {
                   sections.push(
                     new Paragraph({
                       children: [
-                        new TextRun({ text: 'Description: ', bold: true, font: 'Times New Roman' }),
-                        new TextRun({ 
-                          text: line.split('**Description**:')[1]?.trim() || '',
-                          font: 'Times New Roman'
-                        })
+                        new TextRun({ text: 'Description: ', bold: true }),
+                        new TextRun(line.replace('Description:', '').trim())
                       ]
                     })
                   );
-                } else if (line.includes('**Measurable Outcomes**:')) {
+                } else if (line.includes('Measurable Outcomes:')) {
                   sections.push(
                     new Paragraph({
                       children: [
-                        new TextRun({ text: 'Measurable Outcomes: ', bold: true, font: 'Times New Roman' }),
-                        new TextRun({ 
-                          text: line.split('**Measurable Outcomes**:')[1]?.trim() || '',
-                          font: 'Times New Roman'
-                        })
+                        new TextRun({ text: 'Measurable Outcomes: ', bold: true }),
+                        new TextRun(line.replace('Measurable Outcomes:', '').trim())
                       ]
                     })
                   );
-                } else if (line.includes('**Potential Savings**:') || line.includes('**Potential Revenue**:')) {
-                  const label = line.includes('Savings') ? 'Potential Savings: ' : 'Potential Revenue: ';
-                  const content = line.split('**:')[1]?.trim() || '';
+                } else if (line.includes('Potential Savings:') || line.includes('Potential Revenue:')) {
                   sections.push(
                     new Paragraph({
                       children: [
-                        new TextRun({ text: label, bold: true, font: 'Times New Roman' }),
-                        new TextRun({ text: content, font: 'Times New Roman' })
+                        new TextRun({ 
+                          text: line.includes('Savings') ? 'Potential Savings: ' : 'Potential Revenue: ', 
+                          bold: true 
+                        }),
+                        new TextRun(line.replace(/(Potential Savings:|Potential Revenue:)/, '').trim())
                       ],
                       spacing: { after: 200 }
+                    })
+                  );
+                } else if (line.trim()) {
+                  sections.push(
+                    new Paragraph({
+                      text: line,
+                      spacing: { after: 100 }
                     })
                   );
                 }
