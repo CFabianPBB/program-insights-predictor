@@ -22,39 +22,39 @@ Description: ${program.description || 'Not provided'}
 Total Cost: $${program.totalCost?.toLocaleString() || 'Not provided'}
 FTE: ${program.fte || 'Not provided'}
 
-Based on real examples from other jurisdictions, provide:
+Based on real examples from other similar organizations in the United States, provide:
 
 COST-SAVING SOLUTIONS
-Identify 3 specific examples referencing the names of other cities/counties who have reduced costs and saved money in similar programs:
+Identify 3 specific examples referencing the names of other cities/counties who have reduced costs and saved money by achieving a program efficiency, creating a shared service model to share costs, centralizing services within their organization, or otherwise minimized costs in similar programs:
 
 1. Organization: [Name a specific city/county that implemented this solution]
 Description: Describe their specific implementation, including processes changed, technology used, or staff reallocation. Include measurable outcomes they achieved.
 Potential Savings: Estimate potential savings for ${organizationName} based on their results.
 
-2. Organization: [Name a different city/county that implemented this solution]
+2. Organization: [Name a different, and specific city/county that implemented this solution]
 Description: Describe their specific implementation, including processes changed, technology used, or staff reallocation. Include measurable outcomes they achieved.
 Potential Savings: Estimate potential savings for ${organizationName} based on their results.
 
-3. Organization: [Name a different city/county that implemented this solution]
+3. Organization: [Name a different, and specific city/county that implemented this solution]
 Description: Describe their specific implementation, including processes changed, technology used, or staff reallocation. Include measurable outcomes they achieved.
 Potential Savings: Estimate potential savings for ${organizationName} based on their results.
 
 REVENUE-GENERATING SOLUTIONS
-Identify 3 specific examples where other cities/counties have generated entrepreneurial revenue to offset subsidization in similar programs:
+Identify 3 specific examples where other cities/counties have implemented an alternative revenue strategy, a creative new fee, acted entrepreneurial like a business to bring in new revenue, or successfully attained a grant to offset subsidization in similar programs:
 
 1. Organization: [Name a specific city/county that implemented this solution]
 Description: Describe their specific implementation, including new services offered, fee structures changed, or processes improved. Include measurable outcomes they achieved.
 Potential Revenue: Estimate potential revenue for ${organizationName} based on their results.
 
-2. Organization: [Name a different city/county that implemented this solution]
+2. Organization: [Name a different, and specific city/county that implemented this solution]
 Description: Describe their specific implementation, including new services offered, fee structures changed, or processes improved. Include measurable outcomes they achieved.
 Potential Revenue: Estimate potential revenue for ${organizationName} based on their results.
 
-3. Organization: [Name a different city/county that implemented this solution]
+3. Organization: [Name a different, and specific city/county that implemented this solution]
 Description: Describe their specific implementation, including new services offered, fee structures changed, or processes improved. Include measurable outcomes they achieved.
 Potential Revenue: Estimate potential revenue for ${organizationName} based on their results.
 
-Focus on real-world examples and provide specific, measurable outcomes. All solutions should be practical and implementable.`;
+Focus on real-world examples and provide specific, measurable outcomes. All solutions should be practical and implementable. Please ensure all descriptions are at least 4 sentences.`;
   };
   
   const callPerplexityAPI = async (prompt) => {
