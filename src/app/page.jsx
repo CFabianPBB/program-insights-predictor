@@ -10,6 +10,8 @@ export default function Home() {
   const [programs, setPrograms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [fileSelected, setFileSelected] = useState(false);
+  const [fileName, setFileName] = useState('');
 
   const generatePrompt = (program) => {
     return `As a government program analyst, analyze the following program and provide practical cost-saving and revenue-generating solutions that have been implemented in other jurisdictions in the US:
@@ -167,6 +169,12 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
   };
 
   const handleFileUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    setFileName(file.name);
+    setFileSelected(true);
+
     if (!process.env.NEXT_PUBLIC_PERPLEXITY_API_KEY) {
       setError('Perplexity API key not found in environment variables');
       return;
@@ -176,9 +184,6 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
       setError('Please enter your organization name first');
       return;
     }
-
-    const file = event.target.files?.[0];
-    if (!file) return;
 
     setLoading(true);
     setError(null);
@@ -524,6 +529,14 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
                 onChange={handleFileUpload}
               />
             </label>
+            
+            {fileSelected && (
+              <div className="mt-4 p-3 bg-blue-50 rounded-md border border-blue-200">
+                <p className="text-sm text-blue-800">
+                  <span className="font-medium">File selected:</span> {fileName}
+                </p>
+              </div>
+            )}
           </div>
           
           {error && (
@@ -543,6 +556,17 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-700 mr-3"></div>
                 <p className="text-blue-700">Processing programs and generating insights...</p>
               </div>
+            </div>
+          )}
+          
+          {!loading && fileSelected && !programs.length && (
+            <div className="flex justify-end">
+              <button 
+                onClick={() => handleFileUpload({ target: { files: [new File([], fileName)] } })}
+                className="px-6 py-3 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 transition"
+              >
+                Generate Insights
+              </button>
             </div>
           )}
           
