@@ -477,101 +477,140 @@ Focus on real-world examples and provide specific, measurable outcomes. All solu
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-8 bg-gray-50">
-      <div className="w-full max-w-4xl bg-white p-8 rounded-lg shadow-sm">
-        <h1 className="text-4xl font-bold mb-8 text-gray-800">Program Insights Predictor</h1>
-        
-        <div className="mb-8">
-          <label className="block text-sm font-medium mb-2 text-gray-700">
-            Organization Name
-          </label>
-          <input
-            type="text"
-            className="w-full p-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            value={organizationName}
-            onChange={(e) => setOrganizationName(e.target.value)}
-            placeholder="e.g., City of Fort Worth, Harris County"
-          />
+    <div className="flex flex-col min-h-screen">
+      {/* Header */}
+      <header className="bg-slate-700 text-white py-10 px-6">
+        <div className="max-w-5xl mx-auto">
+          <h1 className="text-4xl font-bold mb-3">Program Insights Predictor</h1>
+          <p className="text-xl">Upload your program data to generate cost-saving and revenue insights based on real-world examples</p>
         </div>
-
-        <div className="mb-8">
-          <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
-            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-              <p className="mb-2 text-sm text-gray-500">
-                <span className="font-semibold">Click to upload</span> or drag and drop
-              </p>
-              <p className="text-xs text-gray-500">Excel or CSV files</p>
+      </header>
+      
+      {/* Main Content */}
+      <main className="flex-grow p-6 bg-gray-50">
+        <div className="max-w-5xl mx-auto">
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 className="text-xl font-semibold mb-4">Organization Information</h2>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Organization Name
+              </label>
+              <input
+                type="text"
+                value={organizationName}
+                onChange={(e) => setOrganizationName(e.target.value)}
+                placeholder="e.g., City of Fort Worth, Harris County"
+                className="w-full p-3 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
             </div>
-            <input 
-              type="file" 
-              className="hidden" 
-              accept=".xlsx,.xls,.csv"
-              onChange={handleFileUpload}
-            />
-          </label>
-        </div>
-
-        {programs.length > 0 && (
-          <div className="flex space-x-4 mb-8">
-            <button
-              onClick={exportToWord}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Export to Word
-            </button>
-            <button
-              onClick={exportToExcel}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              Export to Excel
-            </button>
           </div>
-        )}
-
-        {error && (
-          <div className="mb-8 p-4 bg-red-50 text-red-700 rounded-lg border border-red-200">
-            {error}
-          </div>
-        )}
-
-        {loading && (
-          <div className="mb-8 p-4 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 flex items-center">
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700 mr-3"></div>
-            Processing programs and generating insights...
-          </div>
-        )}
-
-        {programs.map((program, index) => (
-          <div key={index} className="mb-8 p-6 bg-white rounded-lg shadow-sm border border-gray-200">
-            <h2 className="text-2xl font-bold mb-2 text-gray-800">{program.programName}</h2>
-            <div className="text-gray-600 mb-4 flex flex-wrap gap-4">
-              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
-                {program.department}
-              </span>
-              <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
-                {formatCurrency(program.totalCost)}
-              </span>
-              {program.fte && (
-                <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">
-                  {program.fte} FTE
-                </span>
-              )}
-            </div>
-            
-            {program.error ? (
-              <div className="text-red-600 bg-red-50 p-4 rounded-lg">
-                Error: {program.error}
+          
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 className="text-xl font-semibold mb-4">Upload Program Data</h2>
+            <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-blue-50 hover:bg-blue-100 border-blue-300 transition-colors">
+              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                <svg className="w-12 h-12 text-blue-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p className="mb-2 text-sm font-medium text-blue-700">
+                  <span className="font-semibold">Click to upload</span> or drag and drop
+                </p>
+                <p className="text-xs text-blue-600">Excel or CSV files</p>
               </div>
-            ) : (
-              <div className="prose max-w-none">
-                <div className="bg-gray-50 p-4 rounded-lg whitespace-pre-wrap font-mono text-sm">
-                  {program.analysis?.overview}
+              <input 
+                type="file" 
+                className="hidden" 
+                accept=".xlsx,.xls,.csv"
+                onChange={handleFileUpload}
+              />
+            </label>
+          </div>
+          
+          {error && (
+            <div className="bg-white rounded-lg shadow-md p-4 mb-6 border-l-4 border-red-500 bg-red-50">
+              <div className="flex items-center">
+                <svg className="w-6 h-6 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-red-700">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {loading && (
+            <div className="bg-white rounded-lg shadow-md p-4 mb-6 border-l-4 border-blue-500 bg-blue-50">
+              <div className="flex items-center">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-700 mr-3"></div>
+                <p className="text-blue-700">Processing programs and generating insights...</p>
+              </div>
+            </div>
+          )}
+          
+          {programs.length > 0 && (
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+              <h2 className="text-xl font-semibold mb-4">Analysis Results</h2>
+              <div className="flex space-x-4 mb-6">
+                <button
+                  onClick={exportToWord}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Export to Word
+                </button>
+                <button
+                  onClick={exportToExcel}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Export to Excel
+                </button>
+              </div>
+              
+              {programs.map((program, index) => (
+                <div key={index} className="mb-6 p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+                  <h3 className="text-2xl font-bold mb-2 text-gray-800">{program.programName}</h3>
+                  <div className="text-gray-600 mb-4 flex flex-wrap gap-4">
+                    <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                      {program.department}
+                    </span>
+                    <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+                      {formatCurrency(program.totalCost)}
+                    </span>
+                    {program.fte && (
+                      <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">
+                        {program.fte} FTE
+                      </span>
+                    )}
+                  </div>
+                  
+                  {program.error ? (
+                    <div className="text-red-600 bg-red-50 p-4 rounded-lg">
+                      Error: {program.error}
+                    </div>
+                  ) : (
+                    <div className="prose max-w-none">
+                      <div className="bg-gray-50 p-4 rounded-lg whitespace-pre-wrap font-mono text-sm">
+                        {program.analysis?.overview}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </main>
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
+      
+      {/* Footer */}
+      <footer className="bg-slate-800 text-white py-4 px-6">
+        <div className="max-w-5xl mx-auto text-center text-sm">
+          <p>© 2025 Program Insights Predictor | City Budget Management Solutions</p>
+        </div>
+      </footer>
+    </div>
   );
 }
